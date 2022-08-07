@@ -1,0 +1,440 @@
+####################################
+## TRADUZINDO O SEGUINTE CODIGO : ##
+####################################
+
+#int valor1 = 10;
+#int valor2 = 20;
+
+#int procedimento3 (int x, int y) {
+#	int temp;
+#	if (x < y) {
+#		tmp = x;
+#		x = y;
+#		y = tmp;
+#	}
+#	
+#	while (x > y) {
+#		x = x - 1;
+#		y = y + 1;
+#	}
+#	
+#	return x
+#}
+#
+#int procedimento 2 (int x) {
+#	int resultado;
+#	resultado = procedimento3(x, valor1) + procedimento3 (x, valor2);
+#	return resultado;
+#}
+#
+#int procedimento1 (int x, int y) {
+#	int vetorA[10];
+#	int i;
+#	int acumulador;
+#	for (int i = 0; i < 10; i++) {
+#		vetorA[i] = i * x + y;
+#		vetorA[i] = procedimento2(vetorA[i]);
+#	}
+#	acumulador = 0;
+#	for (int i = 0; i < 10; i++) {
+#		acumulador = acumulador + vetorA[i];
+#	}
+#	return acumulador;
+#}
+#
+#int main(void) {
+#	int n;
+#	int m;
+#	int resultado;
+#	n = 9;
+#	m = 20;
+#	resultado = procedimento1(n, m);
+#	return 0;
+#}
+#########################			
+## CODIGO EM ASSEMBLY: ##
+#########################
+.text
+	addi    $t0, $zero, 10
+	la      $t1, valor1
+	sw      $t0, 0($t1)
+	addi    $t0, $zero, 20
+	la      $t1, valor2
+	sw      $t0, 0($t1)
+	 
+.globl main
+
+# programa que retorna a soma do maior e do menor valor de 
+# uma lista
+
+###############################################################################
+# Inicia o programa
+###############################################################################
+init:
+            jal   main          		     # vai para o procedimento principal
+            j     finit         		     # termina o programa
+
+            
+###############################################################################
+# Termina o programa
+###############################################################################
+finit:
+            move  $a0, $v0      		      # o valor de retorno de main é colocado em $a0
+            li    $v0, 17      			      # serviço 17: termina o programa
+            syscall             		      # fazemos a chamada ao serviço 17.
+    
+##################
+#PROCEDIMENTO 3
+##################
+#int procedimento3 (int x, int y) {
+#	int temp;
+#	if (x < y) {
+#		tmp = x;
+#		x = y;
+#		y = tmp;
+#	}
+#	
+#	while (x > y) {
+#		x = x - 1;
+#		y = y + 1;
+#	}
+#	
+#	return x
+#}
+# Mapa da Pilha
+#
+# ----------	
+#   $s2 original	$sp + 24
+#   $s1 original	$sp + 20
+#   $s0 original	$sp + 16
+#   $ra     		$sp + 12	
+#   y	    		$sp + 8
+#   x	    		$sp + 4	
+#   temp    		$sp + 0
+# ----------
+# 
+ 
+procedimento3:  
+#--------|
+#PROLOGO |
+#--------|
+#   int temp;
+        addi  $sp, $sp, -28 				# Reservamos na pilha para a variavel
+        sw    $ra, 12($sp)				# Guardo valor de $ra na memoria
+        sw    $s0, 16($sp)				# Guardo valor de $s0 na memoria
+        sw    $s1, 20($sp)				# Guardo valor de $s1 na memoria
+        sw    $s2, 24($sp)				# Guardo valor de $s2 na memoria
+        move  $s0, $a0					# $s0 <- x
+        move  $s1, $a1					# $s1 <- y
+        sw    $s0, 4($sp)				# guardo x na memoria
+        sw    $s1, 8($sp)				#guardo y na memoria
+#-----------------------|
+# CORPO DO PROCEDIMENTO |
+#-----------------------|
+#if (x < y)
+	slt   $s2, $s0, $s1				# bota 1 no $s3 se x < y
+	beq   $s2, 1, true				# desvia para true se x  < y
+	
+false:
+	j     end_if					#finaliza o if
+	
+true:
+#tmp = x;
+	sw    $s0, 0($sp)				# guardo o valor do registrador $s1(x) na variavel temp
+#x = y;
+	sw    $s1, 4($sp)				# guardo na memoria de x, o valor de y
+	lw    $s0, 4($sp)				# leio o valor da memoria de x para o registrador de x($s1)
+#y = tmp;
+	lw    $s1, 0($sp)				#leio o valor de temp e atribuo para o registrador de y($s2)
+	sw    $s1, 8($sp)				#guardo o valor do registrador de y na memoria de y
+
+end_if:
+inicio_while:            
+         j    testa_condicao 				# verificamos se a condicao do laco while eh verdadeira
+instrucoes_laco_while:         		        	# inicio das instrucoes do laco while
+#x = x - 1;
+	subi  $s0, $s0, 1				#subtraio 1 de x
+	sw    $s0, 4($sp)				#guardo valor de x na memoria
+#y = y + 1;
+	addi  $s1, $s1, 1				#incremento 1 em y
+        sw    $s1, 8($sp)				#guardo valor de y na memoria
+testa_condicao:                 			# testamos se a condicao do laco eh verdadeira
+#while (x > y) 
+        slt   $s2, $s1, $s0				# bota 1 no $s3 se y < x
+       	beq   $s2, 1, instrucoes_laco_while		# desvia para as instrucoes se $s3 for 1
+# se a condicao for falsa, o laco acaba
+fim_while:  
+	
+#-------------------|
+# FINAL DA FUNCAO   |
+#-------------------| 
+# return 
+	lw   $s2, 24($sp)
+	lw   $s1, 20($sp)
+	lw   $s0, 16($sp)
+        lw   $v0, 4($sp)    				# valor de retorno eh igual a x
+        lw   $ra, 12($sp)
+        addi $sp, $sp, 28   				# restauramos a pilha
+        jr   $ra            				# retorna ao procedimento chamador
+ 
+ 
+##################
+#PROCEDIMENTO 2
+##################
+#int procedimento 2 (int x) {
+#	int resultado;
+#	resultado = procedimento3(x, valor1) + procedimento3 (x, valor2);
+#	return resultado;
+#}
+
+# Mapa da Pilha
+#
+# ----------
+#   $ra			    $sp + 28
+#   $a1 original            $sp + 24
+#   $a0 original	    $sp + 20
+#   $s2 original	    $sp + 16
+#   $s1 original	    $sp + 12
+#   $s0 original	    $sp + 8
+#   x	   		    $sp + 4	
+#   resultado    	    $sp + 0
+# ---------- 
+procedimento2:
+#--------|
+#PROLOGO |
+#--------|
+#copiando x  + int resultado
+	addi  $sp, $sp, -32				#ajustando pilha
+	sw    $s0, 8($sp)				#guardando o valor original de $s0 na memoria
+	move  $s0, $a0					#atribuindo valor de x a $s0
+	sw    $s1, 12($sp)				#guardando valor original de $s1 na memoria
+	sw    $s2, 16($sp)				# guardando valor original de $s1 na memoria
+	sw    $ra, 28($sp)				#guardando endereco de retorno
+	
+
+#-----------------------|
+# CORPO DO PROCEDIMENTO |
+#-----------------------| 	
+#resultado = procedimento3(x, valor1) + procedimento3 (x, valor2);
+	move  $a0, $s0        				# Os argumentos da funacao sao guaradados em $a0 e $a1
+	la    $s2, valor1				# busco o endereco da variavel global valor1 e passo para $s2
+	lw    $a1, 0($s2)				# boto o valor de valor1 em $s2				
+        jal   procedimento3 				# chamamos o procedimento 3 (x, valor1)
+        move  $s1, $v0					# guardo o resultado da chamada de funcao na variavel resultado
+        la    $s2, valor2
+        lw    $a1, 0($s2)				#guardo valor2 em $a1
+        jal   procedimento3				# chamamos o procedimento 3 (x, valor2)
+        sw    $v0, 0($sp)
+        add   $v0, $v0, $s1				#procedimento3(x, valor1) + procedimento3 (x, valor2);
+        sw    $v0, 0($sp)				#guardo resultado na memoria
+        
+        
+#-------------------|
+# FINAL DA FUNCAO   |
+#-------------------| 	     
+	#return RESULTADO;
+	lw   $s2, 16($sp)  				#restaurando valores originais dos registradores $sX e $aX
+	lw   $s1, 12($sp)
+	lw   $s0, 8($sp)
+	lw   $a0, 20($sp)
+	lw   $a1, 24($sp)
+        lw   $v0, 0($sp)				#$v0 <- resultado
+        lw   $ra, 28($sp)
+        addi $sp, $sp, 32  				# restaura a pilha
+        jr   $ra            				# retorna ao procedimento chamador   
+	
+	
+
+##################
+#PROCEDIMENTO 1
+##################  
+             
+#int procedimento1 (int x, int y) {
+#	int vetorA[10];
+#	int i;
+#	int acumulador;
+#	for (int i = 0; i < 10; i++) {
+#		vetorA[i] = i * x + y;
+#		vetorA[i] = procedimento2(vetorA[i]);
+#	}
+#	acumulador = 0;
+#	for (int i = 0; i < 10; i++) {
+#		acumulador = acumulador + vetorA[i];
+#	}
+#	return acumulador;
+#}
+# Mapa da Pilha
+#
+# ---------
+#   $s2 original $sp + 76
+#   $s2 original $sp + 72
+#   $s1 original $sp + 68
+#   $s0 original $sp + 64
+#   y            $sp + 60
+#   x		 $sp + 56
+#   $ra      	 $sp + 52
+#   acumulador	 $sp + 48
+#   i        	 $sp + 44
+#   vetorA[10]   $sp + 0
+# ----------
+
+procedimento1:
+#--------|
+#PROLOGO |
+#--------|
+#copiando x e y + int vetor[A], i, acumulador
+	addi  $sp, $sp, -80				#ajustando pilha
+	sw    $s0, 64($sp)				# guardando valor original de $s0
+	sw    $s1, 68($sp)				# guardando valor original de $s1
+	sw    $s2, 72($sp)				# guardando valor original de $s1
+	move  $s0, $a0					#registrador $s0 guarda copia da variavel paramentro x
+	move  $s1, $a1					#registrador $s1 guarda copia da variavel paramentro y
+	sw    $s0, 56($sp)				#guardo valor de x na memoria
+	sw    $s1, 60($sp)				#guardo valor de y na memoria
+	sw    $ra, 52($sp)				#guardo valor de retorno
+#-----------------------|
+# CORPO DO PROCEDIMENTO |
+#-----------------------| 
+inicio_for:            
+# for(i=0; i<10; i++)
+# i = 0;
+inicializacao_laco_for:            
+         add   $t7, $zero, $zero     			# $s2 possui valor de i
+         sw    $t7, 44($sp)				# guardo o valor de i na memoria
+# laco for -> verificar condicao
+         j     verifica_condicao_for 			# salto incondicional para a verificacao do laco for
+
+codigo_for_condicao_verdadeira:
+#vetorA[i] = i * x + y;
+	 mul   $s3, $t7, $s0				# $t0 <- i * x
+	 add   $s3, $s3, $s1				# $t0 <- $t0 + y
+	 sll   $t0, $t7, 2				# multiplico i por 4 bits e guardo em $t0
+	 add   $t0, $t0, $sp				# somo o valor de i * 4 com o endereco base de vetA, obtendo endereco efetivo de A[i]
+	 sw    $s3, 0($t0)				# vetorA[i] = i * x + y;
+#vetorA[i] = procedimento2(vetorA[i]);
+	 move  $a0, $s3       				# O argumento da funacao eh guradado em $a0
+         jal   procedimento2 				# chamamos o procedimento 2
+         sw    $v0, 0($t0)   				# veotrA[i] = procedimento2(vetorA[i])
+
+         addi  $t7, $t7, 1   				# incrementamos o valor de i
+         sw    $t7, 44($sp)   				# atualiza o valor de i na memória
+         
+verifica_condicao_for:
+# i < 10
+         slti  $t1, $t7, 10 				# $t3 <- 1 se i < 10
+         bne   $t1, $zero, codigo_for_condicao_verdadeira
+            
+codigo_for_condicao_falsa:            
+fim_for:
+
+
+#for (int i = 0; i < 10; i++) {
+#	acumulador = acumulador + vetorA[i];
+#}
+
+inicio_for2:            
+# for(i=0; i<10; i++)
+# i = 0;
+inicializacao_laco_for2:            
+         add   $t7, $zero, $zero     			# $t7 possui valor de i
+         sw    $t7, 44($sp)				# guardo o valor de i na memoria
+# laco for -> verificar condicao
+         j     verifica_condicao_for2 			# salto incondicional para a verificacao do laco for
+
+codigo_for_condicao_verdadeira2:
+#acumulador = acumulador + vetorA[i];
+	 lw    $s0, 48($sp)				# carrego valor da variavel acumulador
+	 
+	 sll   $t0, $t7, 2				# multiplico i por 4 bits e guardo em $t4
+	 add   $t0, $t0, $sp				# somo o valor de i * 4 com o endereco base de vetA, obtendo endereco efetivo de A[i]
+	 lw    $s1,  0($t0)				# carrego valor de vetorA[i]
+	 
+	 add   $s0, $s0, $s1				# $s0 = acumulador + vetor�[i]
+	 sw    $s0, 48($sp)				# guardo acumulador na memoria
+	 
+         addi  $t7, $t7, 1   				# incrementamos o valor de i
+         sw    $t7, 44($sp)   				# atualiza o valor de i na memória
+         
+verifica_condicao_for2:
+# i < 10
+         slti  $t1, $t7, 10 				# $t3 <- 1 se i < 10
+         bne   $t1, $zero, codigo_for_condicao_verdadeira2
+            
+codigo_for_condicao_falsa2:            
+fim_for2:	
+
+#-------------------|
+# FINAL DA FUNCAO   |
+#-------------------| 
+
+#return acumulador;
+	lw   $s3, 76($sp)  				#restaurando valores originais dos registradores $sX
+	lw   $s2, 72($sp)
+	lw   $s1, 68($sp)
+	lw   $s0, 64($sp)
+        lw   $v0, 48($sp)
+        lw   $ra, 52($sp)
+        addi $sp, $sp, 80   # restaura a pilha
+        jr   $ra            # retorna ao procedimento chamador   
+
+
+#int main(void) {
+#	int n;
+#	int m;
+#	int resultado;
+#	n = 9;
+#	m = 20;
+#	resultado = procedimento1(n, m);
+#	return 0;
+#}
+
+# procedimento main
+# Mapa da Pilha
+#
+# ----------
+#   $ra      	$sp + 12
+#   resultado	$sp + 8
+#   m        	$sp + 4
+#   n        	$sp + 0
+# ----------
+main:
+#--------|
+#PROLOGO |
+#--------|
+# int m, n, resultado;
+        addi  $sp, $sp, -16  				# reserva na pilha um espaço para n, m, resultado e endereco de retorno
+        sw    $ra, 12($sp)  				# armazena na pilha o endereço de retorno
+        
+#-----------------------|
+# CORPO DO PROCEDIMENTO |
+#-----------------------| 
+# n = 9
+        addiu $t0, $zero, 9
+        sw    $t0, 0($sp)
+# m = 20;
+	addiu $t1, $zero, 20
+	sw    $t1, 4($sp)
+# resultado = procedimento1(n, m);    
+        move  $a0, $t0       				# Os argumentos da funcao sao guradados em $a0 e $a1
+        move    $a1, $t1
+        jal   procedimento1 				# chamamos o procedimento soma_maior_menor
+        sw    $v0, 8($sp)   				# resultado = procedimento1(n, m)
+        la    $t0, valor3
+        sw    $v0, 0($t0)
+        
+        
+#-------------------|
+# FINAL DA FUNCAO   |
+#-------------------|  
+# return 0;
+        li    $v0, 0        				# retorna 0
+        lw    $ra, 12($sp)   				# restaura o endereço de retorno
+        addi  $sp, $sp, 8   				# restauramos a pilha
+        jr    $ra           				# retorna ao procedimento chamador
+end_main:
+
+.data
+	valor1: .word 0				# variavel valor1
+    	valor2: .word 0				# variavel valor2
+	valor3: .word 0 			#variavel acumulador
+
